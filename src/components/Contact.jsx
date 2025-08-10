@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import emailjs from "@emailjs/browser";
 
@@ -17,10 +17,14 @@ const Contact = () => {
 
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { target } = e;
-    const { name, value } = target;
+  // ✅ Initialize EmailJS once when component mounts
+  useEffect(() => {
+    console.log("Initializing EmailJS with public key:", import.meta.env.VITE_APP_EMAILJS_PUBLIC_KEY);
+    emailjs.init(import.meta.env.VITE_APP_EMAILJS_PUBLIC_KEY);
+  }, []);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setForm({
       ...form,
       [name]: value,
@@ -31,43 +35,41 @@ const Contact = () => {
     e.preventDefault();
     setLoading(true);
 
-    emailjs
-      .send(
-        import.meta.env.VITE_APP_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID,
-        {
-          from_name: form.name,
-          to_name: "Archit Kumar",
-          from_email: form.email,
-          to_email: "architk5856@gmail.com",
-          message: form.message,
-        },
-        import.meta.env.VITE_APP_EMAILJS_PUBLIC_KEY
-      )
-      .then(
-        () => {
-          setLoading(false);
-          alert("Thank you. I will get back to you as soon as possible.");
+    // Debugging logs
+    console.log("SERVICE_ID:", import.meta.env.VITE_APP_EMAILJS_SERVICE_ID);
+    console.log("TEMPLATE_ID:", import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID);
+    console.log("Form Data:", form);
 
-          setForm({
-            name: "",
-            email: "",
-            message: "",
-          });
-        },
-        (error) => {
-          setLoading(false);
-          console.error(error);
+    emailjs.send(
+      import.meta.env.VITE_APP_EMAILJS_SERVICE_ID,
+      import.meta.env.VITE_APP_EMAILJS_TEMPLATE_ID,
+      {
+        from_name: form.name, // Matches {{from_name}} in template
+        email: form.email,    // Matches {{email}} in template
+        message: form.message // Matches {{message}} in template
+      }
+    )
+    .then(
+      () => {
+        setLoading(false);
+        alert("Thank you. I will get back to you as soon as possible.");
 
-          alert("Ahh, something went wrong. Please try again.");
-        }
-      );
+        setForm({
+          name: "",
+          email: "",
+          message: "",
+        });
+      },
+      (error) => {
+        setLoading(false);
+        console.error("EmailJS Error:", error);
+        alert("Ahh, something went wrong. Please try again.");
+      }
+    );
   };
 
   return (
-    <div
-      className={`xl:mt-12 flex xl:flex-row flex-col-reverse gap-10 overflow-hidden`}
-    >
+    <div className={`xl:mt-12 flex xl:flex-row flex-col-reverse gap-10 overflow-hidden`}>
       <motion.div
         variants={slideIn("left", "tween", 0.2, 1)}
         className='flex-[0.75] bg-black-100 p-8 rounded-2xl'
